@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: nginx-server
+  name: nginx-server
+  namespace: sec-ns
+spec:
+  revisionHistoryLimit: 3 # <=5, per VAP
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx-server
+  template:
+    metadata:
+      labels:
+        app: nginx-server
+    spec:
+      securityContext: # Pod-level sec rules - apply to all containers
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - image: nginxinc/nginx-unprivileged # non-default nginx image which doesn't require running as root
+        name: nginx
+        securityContext: # additional per-container sec settings
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["ALL"]
+        resources:
+          requests:
+            cpu: 100m
+            memory: 100Mi
+          limits:
+            cpu: 100m 
+            memory: 100Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: nginx-server
+  name: nginx-server
+  namespace: sec-ns
+spec:
+  ports:
+  - port: 80
+    protocol: TCP
+    targetPort: 8080 # unprivileged nginx cannot bind port 80, uses 8080 by default instead
+  selector:
+    app: nginx-server

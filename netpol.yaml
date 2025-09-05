@@ -1,0 +1,21 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: lab-network-policy
+  namespace: sec-ns
+spec:
+  podSelector:
+    matchLabels:
+      app: nginx-server
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          lab: "15"
+    ports:
+    - protocol: TCP
+      port: 80
+
+
